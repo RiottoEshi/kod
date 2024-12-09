@@ -1,0 +1,45 @@
+from sql import Session
+from sql.models import User
+from sqlalchemy.orm import joinedload
+from datetime import datetime, timedelta
+
+class UserService:
+    def __init__(self):
+        self.session = Session()
+
+    def get_user(self, login: str):
+        return self.session.query(User).options(joinedload(User.role)).filter_by(login=login).first()
+
+    def add_user(self, user_data):
+        
+        new_user = User(**user_data)
+        self.session.add(new_user)
+        self.session.commit()
+
+    def try_login(self, login: str, password: str):
+        user = self.get_user(login)
+
+        if user:
+            
+            if user.is_block or (user.last_login and datetime.now() - user.last_login > timedelta(days=30)):
+                user.is_block = True  
+                self.update_user(user)
+                return None  
+
+            if user.password == password:
+                user.last_login = datetime.now()  
+                user.failed_attempts = 0  
+                self.update_user(user)  
+                return user  
+            else:
+                user.failed_attempts += 1  
+                if user.failed_attempts >= 3:
+                    user.is_block = True  
+                self.update_user(user)  
+                return None  
+        else:
+            return None 
+
+    def update_user(self, user):
+        self.session.merge(user)
+        self.session.commit()
