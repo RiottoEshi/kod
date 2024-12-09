@@ -1,0 +1,13 @@
+from sql import create_db, Session
+from PySide6.QtWidgets import QApplication, QLineEdit, QWidget, QVBoxLayout, QPushButton, QMessageBox
+from core.app import  UserService
+from gui.loginwindow import LoginForm
+import sys
+servise=UserService()
+
+
+
+app = QApplication(sys.argv)
+window = LoginForm(servise)
+window.show()
+sys.exit(app.exec())
